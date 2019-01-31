@@ -22,6 +22,12 @@ import java.util.concurrent.TimeUnit;
 
 public class WebShot {
 
+    // En fonction du système d'exploitation, retourne le nom du dossier contenant le driver adapté
+    private static String getSpecificDriverPath() {
+        return (System.getProperty("os.name").toLowerCase().contains("mac")) ? ("macos") : ("linux");
+    }
+
+    // Configure les options d'aide du programme
     private static Options configHelpOptions() {
         // Ajouter une option pour afficher l'aide de l'application.
         // Commandes: "--help", "-h"
@@ -37,6 +43,7 @@ public class WebShot {
         return helpOptions;
     }
 
+    // Configure les paramètres du programme
     private static Options configParameters(final Options helpOptions) {
         // Ajouter une option pour spécifier l'adresse URL du site à capturer
         // Commandes: "--url", "-u"
@@ -120,8 +127,8 @@ public class WebShot {
 
     // Chemin vers les exécutables des navigateurs supportés
     private static Map<String, String> driversEnvPath = new HashMap<String, String>() {{
-        put("webdriver.gecko.driver", projectPath + "/drivers/geckodriver");
-        put("webdriver.chrome.driver", projectPath + "/drivers/chromedriver");
+        put("webdriver.gecko.driver", projectPath + "/drivers/" + getSpecificDriverPath() + "/geckodriver");
+        put("webdriver.chrome.driver", projectPath + "/drivers/" + getSpecificDriverPath() + "/chromedriver");
     }};
     private static Map<String, String> driversEnvKey = new HashMap<String, String>() {{
         put("chrome", CHROME_DRIVER_KEY);
@@ -168,7 +175,8 @@ public class WebShot {
         }
 
         Screenshot screenshot = new AShot()
-                .shootingStrategy(ShootingStrategies.viewportRetina(2000, 0, 0, 2))
+                // .shootingStrategy(ShootingStrategies.viewportRetina(2000, 0, 0, 2))
+                .shootingStrategy(ShootingStrategies.viewportPasting(1000))
                 .takeScreenshot(driver);
         ImageIO.write(screenshot.getImage(), fileExtension, new File(destFilePath));
 
@@ -201,7 +209,7 @@ public class WebShot {
             final CommandLine line = parser.parse(options, args);
 
             // on récupère les options nécessaires,
-            // url, driver, width
+            // url, driver, filename, headless, width
             String url = line.getOptionValue("url");
             String useDriver = line.getOptionValue("driver");
             String filename = line.getOptionValue("filename");
@@ -212,6 +220,7 @@ public class WebShot {
             } catch (NumberFormatException ignored) {
             }
 
+            // Charger les drivers des navigateurs dans les variables d'environnement
             String useDriverKey = driversEnvKey.get(useDriver);
             System.setProperty(useDriverKey, driversEnvPath.get(useDriverKey));
 
@@ -219,6 +228,7 @@ public class WebShot {
             if (useDriverKey.equals(CHROME_DRIVER_KEY)) {
                 ChromeOptions chromeOptions = new ChromeOptions();
 
+                chromeOptions.addArguments("--no-sandbox");
                 if (headlessMode) chromeOptions.addArguments("--headless");
 
                 driver = new ChromeDriver(chromeOptions);
@@ -234,20 +244,28 @@ public class WebShot {
             }
 
             if (driver != null) {
+                // Maximiser la fenêtre du navigateur
                 driver.manage().window().maximize();
 
+                // Si l'utilisateur a renseigné une largeur, on le prend, sinon on prend toute la largeur de la fenêtre par défaut
                 int driverWidth = width > 0 ? width : driver.manage().window().getSize().getWidth();
                 int driverHeight = driver.manage().window().getSize().getHeight();
                 Dimension dimension = new Dimension(driverWidth, driverHeight);
-
                 driver.manage().window().setSize(dimension);
                 driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
 
+                // Accéder à l'URL demandé
                 driver.get(url);
 
+                // Prendre la capture et sauvegarder le fichier avec un nom spécifié
                 String filePath = takeScreenshot(driver, filename);
+
+                // Ecrire le chemin vers le fichier dans la console
+                // Permettra au programme appelant de pouvoir accéder au fichier directement
+                // Dans notre cas, l'API pourra mettre le fichier à ce chemin en mode Téléchargement en reponse au client
                 System.out.println(filePath);
 
+                // Quitter le navigateur
                 driver.quit();
             }
         } catch (MissingOptionException e) {
