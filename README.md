@@ -39,6 +39,14 @@ Specify the webpage URL to capture. Please prefix with "http://"
 You can provide a specific width for the browser window. If not, it will be maximized.
 
 
+### Notes
+Two folders are importants to make the application works.
+
+**build/** and **dist/** 
+
+and if you are executing directly the jar file, these folders have to be in same folder with the JAR file.
+But if you are executing throught other tool, PHP api as example, so the PHP file have to be in same folder with these folders.
+
 ### Example
 ```bash
 java -jar WebShot.jar --url https://www.seleniumhq.org/ --driver chrome --width 1280 --headless --filename=NomDuFichier
