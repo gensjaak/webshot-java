@@ -11,6 +11,7 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 import ru.yandex.qatools.ashot.AShot;
 import ru.yandex.qatools.ashot.Screenshot;
 import ru.yandex.qatools.ashot.shooting.ShootingStrategies;
+import ru.yandex.qatools.ashot.shooting.ShootingStrategy;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -174,9 +175,11 @@ public class WebShot {
             destFilePath = getFilePath(generateFileName(driver.getTitle()));
         }
 
+        ShootingStrategy shootingStrategyForRetina = ShootingStrategies.viewportRetina(2000, 0, 0, 2);
+        ShootingStrategy shootingStrategyForNonRetina = ShootingStrategies.viewportPasting(1000);
+
         Screenshot screenshot = new AShot()
-                // .shootingStrategy(ShootingStrategies.viewportRetina(2000, 0, 0, 2))
-                .shootingStrategy(ShootingStrategies.viewportPasting(1000))
+                .shootingStrategy((getSpecificDriverPath().equals("macos")) ? shootingStrategyForRetina : shootingStrategyForNonRetina)
                 .takeScreenshot(driver);
         ImageIO.write(screenshot.getImage(), fileExtension, new File(destFilePath));
 
